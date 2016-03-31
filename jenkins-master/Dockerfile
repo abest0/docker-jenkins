@@ -1,4 +1,4 @@
-FROM jenkins:1.609.1
+FROM jenkins:1.642.3
 MAINTAINER abest@utilitas.io
 
 USER root
