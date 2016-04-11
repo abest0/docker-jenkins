@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# this script will use docker-machine to provision a machine to AWS
+
+E_BADARGS=13
+
+usage(){
+    echo "Usage: `basename $0` <vpc-id> <machine-name>"
+    echo ""
+    echo "OPTIONS:"
+    echo "-d            display debug output from docker-machine"
+    echo "-z <zone>     set the AWS zone to create the machine [a]"
+    echo "-g <group>    set the security group for the machine [docker-machine]"
+    echo "-p <profile>  AWS profile from ~/.aws/credentials to use when creating machine [default]"
+    exit $E_BADARGS
+}
+
+if [ "$#" -lt 2 ];then
+    usage
+fi
+
+zone="a"
+group="docker-machine"
+profile="default"
+
+while getopts ":dz:g:p:" opt; do
+    case $opt in
+        h) echo usage
+            exit
+            ;;
+        d) debug=--debug
+            ;;
+        p) profile=$OPTARG
+            ;;
+        z) zone=$OPTARG
+            ;;
+        g) group=$OPTARG
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+        :)
+            echo "Option $OPTARG requires an argument" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# now that we're done processing options, let's get to our real arguments
+shift $((OPTIND-1))
+
+ACCESS_KEY_ID="$(aws-env --profile ${profile} access-key)"
+SECRET_KEY="$(aws-env --profile ${profile} secret-key)"
+
+docker-machine $debug create --driver amazonec2 \
+--amazonec2-secret-key $SECRET_KEY \
+--amazonec2-access-key $ACCESS_KEY_ID \
+--amazonec2-security-group $group \
+--amazonec2-vpc-id $1 \
+--amazonec2-zone $zone \
+$2
+
+status=$?
+echo -en '\n'
+
+if [ $status -ne "0" ]; then
+  echo "An error occurred"
+fi
