@@ -34,3 +34,4 @@ matrix-project:1.6
 git:2.4.4
 github-api:1.72.1
 github:1.18.1
+github-oauth:0.22.3
